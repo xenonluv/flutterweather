@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
+import 'package:version3/data/Network.dart';
+import 'package:version3/data/my_location.dart';
 import 'dart:core';
-import 'dart:convert' as convert;
+import 'package:version3/data/Network.dart';
+import 'package:version3/screen/weather_screen.dart';
+
+const apikey = 'c382d3f9177746d74bd0463aadc5a803';
 
 class Loading extends StatefulWidget {
   const Loading({Key? key}) : super(key: key);
@@ -12,32 +15,30 @@ class Loading extends StatefulWidget {
 }
 
 class _LoadingState extends State<Loading> {
+  late double latitude3;
+  late double longitude3;
+
   @override
   void initState() {
     super.initState();
     getLoacation();
-    fetchData();
   }
 
   Future<void> getLoacation() async {
-    LocationPermission permission =
-        await Geolocator.requestPermission(); //오류 해결 코드
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-    print(position);
-  }
+    MyLocation myLocation = MyLocation();
+    await myLocation.getMyCurrentLovation();
+    latitude3 = myLocation.latitude2;
+    longitude3 = myLocation.longitude2;
+    print(latitude3);
+    print(longitude3);
+    Network network = Network(
+        'https://api.openweathermap.org/data/2.5/weather?lat=$latitude3&lon=$longitude3&appid=$apikey&units=metric');
 
-  Future<void> fetchData() async {
-    var url = Uri.parse(
-        'https://api.openweathermap.org/data/2.5/weather?q=Seoul&appid=c382d3f9177746d74bd0463aadc5a803');
-
-    http.Response response = await http.get(url);
-    var jsonData = response.body;
-    var myWeather = convert.jsonDecode(jsonData);
-    print(myWeather["weather"][0]["description"]);
-
-    var wind = convert.jsonDecode(jsonData)["wind"];
-    print(wind);
+    var weatherData = await network.getJsonData();
+    print(weatherData);
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return WeatherScreen(parseWeatherData: weatherData,);
+    }));
   }
 
   @override
